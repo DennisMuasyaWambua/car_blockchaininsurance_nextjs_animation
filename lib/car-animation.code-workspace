@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../JS-3D-Car/js/libs/draco"
+		}
+	],
+	"settings": {}
+}
