@@ -472,23 +472,22 @@ export default function CarAnimation() {
       sendDataToAPI(data);
     }
   
-    function sendDataToAPI(data) {
+    async function sendDataToAPI(data) {
       console.log("Calling API at:", API_URL);
-      fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-        .then((response) => {
-          console.log("API response status:", response.status);
-          return response.json();
-        })
-        .then((result) => {
-          console.log("Risk API result:", result);
-          const risk = result?.risk ? parseFloat(result.risk.toFixed(2)) : 0;
-          setRiskPercentage(risk);
-        })
-        .catch((error) => console.error('Error sending data:', error));
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        console.log("API response status:", response.status);
+        const result = await response.json();
+        console.log("Risk API result:", result);
+        const risk = result?.risk ? parseFloat(result.risk.toFixed(2)) : 0;
+        setRiskPercentage(risk);
+      } catch (error) {
+        console.error('Error sending data:', error);
+      }
     }
   
     console.log("Setting up risk data interval.");
