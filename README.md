@@ -1,4 +1,4 @@
-## Demo for a Blockchain powered car insurance
+# Demo for a Blockchain powered car insurance
 
 This is a simple demonstration of how blockchain can easily be used to create a dynamic usage based car insurance
 that rewards motorists for having good driving practices

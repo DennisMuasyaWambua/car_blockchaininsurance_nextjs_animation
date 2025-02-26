@@ -520,12 +520,29 @@ export default function CarAnimation() {
       ref={containerRef}
       style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
     >
-      <div style={{ position: 'absolute', top: 10, left: 10, color: 'white', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ position: 'absolute', top: 10, left: 100, color: 'Black', fontFamily: 'Arial, sans-serif' }}>
         <div>Engine RPM: {engineRpm} | Gear: {gear}</div>
         <div>G-forces: X={gForces.Gx}, Y={gForces.Gy}, Z={gForces.Gz}</div>
         <div>Throttle: {(throttlePos * 100).toFixed(1)}%</div>
         <div>Risk: {riskPercentage}%</div>
       </div>
+      {/* wallet connection form */}
+      <div className="fixed flex justify-center items-center top-1/2 left-5 transform -translate-y-1/2 w-72 h-auto z-50 rounded-lg">
+  <div className="bg-white p-5 rounded-md w-full max-w-xs shadow-md">
+    <form id="modal-form">
+      <div className="mb-4">
+        <button type="button" id="connect-wallet" className="w-full py-3 bg-blue-500 text-white border-none cursor-pointer mb-2 rounded-md text-sm hover:bg-blue-700">Connect Wallet</button>
+      </div>
+      <div className="mb-4">
+        <label htmlFor="car-value" className="block mb-1 font-bold">Car Value ($):</label>
+        <input type="number" id="car-value" required min="0" className="w-full p-2 box-border border border-gray-300 rounded-md" placeholder='car value'/>
+      </div>
+     
+      <button type="submit" className="w-full py-3 bg-green-600 text-white border-none cursor-pointer rounded-md text-sm hover:bg-green-700">Start Simulation</button>
+    </form>
+  </div>
+</div>
+
     </div>
   );
 }
