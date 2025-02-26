@@ -38,6 +38,22 @@ export default function CarAnimation() {
   const [throttlePos, setThrottlePos] = useState(0);
   const [gForces, setGForces] = useState({ Gx: 0, Gy: 0, Gz: 0 });
 
+  const engineRpmRef = useRef(engineRpm);
+  const throttlePosRef = useRef(throttlePos);
+  const gForcesRef = useRef(gForces);
+
+  useEffect(() => {
+    engineRpmRef.current = engineRpm;
+  }, [engineRpm]);
+
+  useEffect(() => {
+    throttlePosRef.current = throttlePos;
+  }, [throttlePos]);
+
+  useEffect(() => {
+    gForcesRef.current = gForces;
+  }, [gForces]);
+
   const address = useAddress();
   console.log("Connected address:", address);
 
@@ -462,11 +478,11 @@ export default function CarAnimation() {
   
     function gatherAndSendData() {
       const data = {
-        engine_rpm: engineRpm,
-        g_x: formatValue(gForces.Gx),
-        g_y: formatValue(gForces.Gy),
-        g_z: formatValue(gForces.Gz),
-        throttle_position: formatValue(throttlePos * 100),
+        engine_rpm: engineRpmRef.current,
+        g_x: formatValue(gForcesRef.current.Gx),
+        g_y: formatValue(gForcesRef.current.Gy),
+        g_z: formatValue(gForcesRef.current.Gz),
+        throttle_position: formatValue(throttlePosRef.current * 100),
       };
       console.log("Sending risk data:", data);
       sendDataToAPI(data);
@@ -496,7 +512,7 @@ export default function CarAnimation() {
       clearInterval(intervalId);
       console.log("Cleared risk data interval.");
     };
-  }, [engineRpm, throttlePos, gForces]);
+  }, []);
   
 
   return (
