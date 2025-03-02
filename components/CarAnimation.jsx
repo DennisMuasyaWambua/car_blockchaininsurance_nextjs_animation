@@ -11,12 +11,11 @@ import { CarControls } from '../lib/CarControls.js';
 import {
   createThirdwebClient,
   getContract,
-  readContract,
-  prepareContractCall,
-  sendTransaction,
   defineChain,
+  prepareContractCall
 } from 'thirdweb';
-import { useAddress } from "@thirdweb-dev/react";
+
+import { useActiveAccount, useWalletBalance, useReadContract, useSendTransaction, ConnectButton } from "thirdweb/react";
 
 export default function CarAnimation() {
   // Refs and state
@@ -33,6 +32,8 @@ export default function CarAnimation() {
   const carControlsRef = useRef(null);
 
   const [riskPercentage, setRiskPercentage] = useState(0);
+  const [basePremium, setBasePremium] = useState(0);
+  const [driverAddress, setDriverAddress] = useState("");
   const [engineRpm, setEngineRpm] = useState(0);
   const [gear, setGear] = useState(1);
   const [throttlePos, setThrottlePos] = useState(0);
@@ -54,38 +55,85 @@ export default function CarAnimation() {
     gForcesRef.current = gForces;
   }, [gForces]);
 
-  const address = useAddress();
-  console.log("Connected address:", address);
 
-  // Setup Thirdweb (if needed)
-  useEffect(() => {
-    async function initThirdweb() {
-      try {
-        const client = createThirdwebClient({
-          clientId: 'ee409b501b4b5ebbdd046e4f90f9f4ce',
-        });
-        const chain = defineChain({
-          id: 1,
-          rpc: 'https://rpc.sepolia-api.lisk.com/',
-          chainId: 4202,
-          nativeCurrency: {
-            name: 'Lisk Sepolia Testnet',
-            symbol: 'ETH',
-            decimals: 18,
-          },
-        });
-        const contract = getContract({
-          client,
-          chain: defineChain(4202),
-          address: '0x936F59DA9c4E8961E128771FCCF4c015A9256911',
-        });
-        console.log('Active account address:', address);
-      } catch (err) {
-        console.error('Error setting up Thirdweb or contract:', err);
-      }
+
+//Thirdweb Intergration
+  const client = createThirdwebClient({
+    clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
+  });
+  const chain = defineChain({
+    id: 1,
+    rpc: 'https://rpc.sepolia-api.lisk.com/',
+    chainId: 4202,
+    nativeCurrency: {
+      name: 'Lisk Sepolia Testnet',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+  });
+  const contract = getContract({
+    client,
+    chain: defineChain(4202),
+    address: '0x936f59da9c4e8961e128771fccf4c015a9256911',
+  });
+  console.log('Contract Address:', contract.address);
+
+  const account = useActiveAccount();
+  const { data: balance, isLoading } = useWalletBalance({
+    client,
+    chain,
+    address: account?.address,
+  });
+console.log('Account Balance:', balance);
+console.log('Active Wallet Address:', account?.address);
+
+//Read Functions
+// Driver registration
+const { data, isPending } = useReadContract({
+  contract,
+  method: "function drivers(address) view returns (uint256 riskScore, uint256 basePremium, uint256 monthlyPremium, bool isRegistered)",
+  params: [driverAddress], // Pass the driver's address to fetch data
+});
+console.log('Driver Data:', data);
+console.log('Is Pending:', isPending);
+// console.log('Monthly Premium:', data?.monthlyPremium?.toString());
+// console.log('Base Premium:', data?.basePremium?.toString());
+// console.log('Risk Score:', data?.riskScore?.toString());
+// console.log('Is Registered:', data?.isRegistered? "Yes" : "No");
+
+// Write function
+const { mutate: sendTransaction, isPending: isWritePending } = useSendTransaction();
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Validate inputs
+    if (!driverAddress || !basePremium) {
+      alert("Please fill in all fields.");
+      return;
     }
-    initThirdweb();
-  }, [address]);
+
+    // Prepare the transaction
+    const transaction = prepareContractCall({
+      contract,
+      method: "function registerDriver(address driverAddress, uint256 basePremium)",
+      params: [driverAddress, basePremium],
+    });
+
+    // Send the transaction
+    sendTransaction(transaction, {
+      onSuccess: () => {
+        alert("Driver registered successfully!");
+        setDriverAddress("");
+        setBasePremium("");
+      },
+      onError: (error) => {
+        alert(`Error: ${error.message}`);
+      },
+    });
+  };
+
 
   // Main Three.js setup and animation
   useEffect(() => {
@@ -469,6 +517,7 @@ export default function CarAnimation() {
     };
   }, []);
   useEffect(() => {
+    // className="w-full py-3 bg-blue-500 text-white border-none cursor-pointer mb-2 rounded-md text-sm hover:bg-blue-700"
     const API_URL = 'https://carriskinsurancemodel-production.up.railway.app/riskmodel/predict/';
     
     function formatValue(num) {
@@ -518,8 +567,7 @@ export default function CarAnimation() {
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
-    >
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 10, left: 100, color: 'Black', fontFamily: 'Arial, sans-serif' }}>
         <div>Engine RPM: {engineRpm} | Gear: {gear}</div>
         <div>G-forces: X={gForces.Gx}, Y={gForces.Gy}, Z={gForces.Gz}</div>
@@ -528,20 +576,75 @@ export default function CarAnimation() {
       </div>
       {/* wallet connection form */}
       <div className="fixed flex justify-center items-center top-1/2 left-5 transform -translate-y-1/2 w-72 h-auto z-50 rounded-lg">
-  <div className="bg-white p-5 rounded-md w-full max-w-xs shadow-md">
-    <form id="modal-form">
-      <div className="mb-4">
-        <button type="button" id="connect-wallet" className="w-full py-3 bg-blue-500 text-white border-none cursor-pointer mb-2 rounded-md text-sm hover:bg-blue-700">Connect Wallet</button>
+        <div className="bg-white p-5 rounded-md w-full max-w-xs shadow-md">
+          <div className="mb-2">
+            <form id= "modal-form" onSubmit={handleSubmit}>
+              <div className="mb-2">
+                <ConnectButton client={client}/>
+              </div>
+              <div className="mb-4">
+              <p className="text-black text-overflow-ellipsis">Wallet address: {account?.address}</p>
+              <p className="text-black">
+                Wallet balance: {balance?.displayValue} {balance?.symbol}
+              </p>
+              </div>
+                {/* Driver Address Input */}
+                <div className="mb-4">
+                <p className="text-black">Driver Address</p>
+                  <label htmlFor="driverAddress">Driver Address:</label>
+                  <input
+                    type="text"
+                    className="w-full py-3 px-2 bg-gray-100 text-black border-none cursor-not-allowed mb-2 rounded-md text-sm"
+                    id="driverAddress"
+                    value={driverAddress}
+                    onChange={(e) => setDriverAddress(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Base Premium Input */}
+                <div className="mb-4">
+                <p className="text-black">Base Premium</p>
+                  <label htmlFor="basePremium">Base Premium:</label>
+                  <input
+                    type="number"
+                    className="w-full py-3 px-2 bg-gray-100 text-black border-none cursor-not-allowed mb-2 rounded-md text-sm"
+                    id="basePremium"
+                    value={basePremium}
+                    onChange={(e) => setBasePremium(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <p className="text-black">Risk Percentage</p>
+                <label htmlFor="risk" className="text-red">Risk Percentage:</label> 
+                <input type="text" id="risk" name="risk" value={riskPercentage} className="w-full py-3 px-2 bg-gray-100 text-black border-none cursor-not-allowed mb-2 rounded-md text-sm" readOnly />
+                
+                
+                {/* Submit Button */}
+                <div className="mt-6">
+                  <button type="submit" disabled={isPending} className="w-full py-3 bg-blue-500 text-white border-none cursor-pointer mb-2 rounded-md text-sm hover:bg-blue-700">
+                    {isPending ? "Registering..." : "Register Driver"}
+                  </button>
+                </div>
+            
+            </form>
+
+            {/* Display Driver Data */}
+            {driverAddress && data ? (
+              <div>
+                <h2>Driver Details</h2>
+                <p>Risk Score: {data.riskScore?.toString()}</p>
+                <p>Base Premium: {data.basePremium?.toString()}</p>
+                <p>Monthly Premium: {data.monthlyPremium?.toString()}</p>
+                <p>Registered: {data.isRegistered ? "Yes" : "No"}</p>
+              </div>
+            ) : (
+              <p>No driver data found for the provided address.</p>
+           )}
+          </div>
+        </div>
       </div>
-      <div className="mb-4">
-        <label htmlFor="car-value" className="block mb-1 font-bold">Car Value ($):</label>
-        <input type="number" id="car-value" required min="0" className="w-full p-2 box-border border border-gray-300 rounded-md" placeholder='car value'/>
-      </div>
-     
-      <button type="submit" className="w-full py-3 bg-green-600 text-white border-none cursor-pointer rounded-md text-sm hover:bg-green-700">Start Simulation</button>
-    </form>
-  </div>
-</div>
 
     </div>
   );
