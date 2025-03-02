@@ -94,12 +94,6 @@ const { data, isPending } = useReadContract({
   method: "function drivers(address) view returns (uint256 riskScore, uint256 basePremium, uint256 monthlyPremium, bool isRegistered)",
   params: [driverAddress], // Pass the driver's address to fetch data
 });
-console.log('Driver Data:', data);
-console.log('Is Pending:', isPending);
-// console.log('Monthly Premium:', data?.monthlyPremium?.toString());
-// console.log('Base Premium:', data?.basePremium?.toString());
-// console.log('Risk Score:', data?.riskScore?.toString());
-// console.log('Is Registered:', data?.isRegistered? "Yes" : "No");
 
 // Write function
 const { mutate: sendTransaction, isPending: isWritePending } = useSendTransaction();
