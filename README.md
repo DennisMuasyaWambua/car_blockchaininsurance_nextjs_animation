@@ -53,6 +53,9 @@ The smart contract is deployed on the Lisk blockchain which is a layer 2 chain.
 - [x] Xgboost (Machine learning model used)
 - [x] Django restframework
 - [x] Thirdweb
+      
+![image](https://github.com/user-attachments/assets/a6be3700-6531-4e54-b7ef-66c7b64e0e92)
+
 
 
 
